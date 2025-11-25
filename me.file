@@ -1,0 +1,7 @@
+npx convex dev
+
+npm run dev
+
+Password: EFFAT-AI-ADMIN
+
+npx convex deploy --prod
