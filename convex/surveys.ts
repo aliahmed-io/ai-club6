@@ -18,6 +18,13 @@ export const submit = mutation({
     },
 });
 
+export const clearAll = mutation({
+    handler: async (ctx) => {
+        const responses = await ctx.db.query("responses").collect();
+        await Promise.all(responses.map((r) => ctx.db.delete(r._id)));
+    },
+});
+
 export const getStats = query({
     handler: async (ctx) => {
         const responses = await ctx.db.query("responses").collect();
@@ -29,6 +36,7 @@ export const getStats = query({
                 q3Data: [],
                 q4Data: [],
                 q5Data: [],
+                dailyStats: [],
             };
         }
 
@@ -66,7 +74,31 @@ export const getStats = query({
             percentage: Math.round((d.value / total) * 100) || 0,
         }));
 
-        return { q3Data, q4Data, q5Data, total };
+        // Calculate Daily Stats (Last 7 Days)
+        const dailyStatsMap = new Map<string, number>();
+        const now = new Date();
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(now);
+            d.setDate(d.getDate() - i);
+            dailyStatsMap.set(d.toLocaleDateString('en-US', { weekday: 'short' }), 0);
+        }
+
+        responses.forEach((r) => {
+            if (r.createdAt) {
+                const date = new Date(r.createdAt).toLocaleDateString('en-US', { weekday: 'short' });
+                if (dailyStatsMap.has(date)) {
+                    dailyStatsMap.set(date, (dailyStatsMap.get(date) || 0) + 1);
+                }
+            }
+        });
+
+        const dailyStats = Array.from(dailyStatsMap.entries()).map(([label, value]) => ({
+            label,
+            value,
+            percentage: Math.round((value / total) * 100) || 0,
+        }));
+
+        return { q3Data, q4Data, q5Data, dailyStats, total };
     },
 });
 

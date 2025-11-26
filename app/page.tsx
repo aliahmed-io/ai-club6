@@ -38,6 +38,7 @@ export default function App() {
 
   // Convex Mutations & Queries
   const submitSurvey = useMutation(api.surveys.submit);
+  const clearAll = useMutation(api.surveys.clearAll);
   const stats = useQuery(api.surveys.getStats);
   const recentResponses = useQuery(api.surveys.getRecent);
 
@@ -146,32 +147,6 @@ export default function App() {
     } else {
       alert("Incorrect password");
     }
-  };
-
-  const exportCSV = () => {
-    if (!recentResponses) return;
-
-    const headers = ["ID", "Q1: Last Asked", "Q2: Annoying Thing", "Q3: Therapist?", "Q4: Frequency", "Q5: Trust Secrets?", "Date"];
-    const rows = recentResponses.map((d: any) => [
-      d._id,
-      `"${d.q1?.replace(/"/g, '""') || ''}"`,
-      `"${d.q2?.replace(/"/g, '""') || ''}"`,
-      d.q3,
-      d.q4,
-      d.q5,
-      d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'N/A'
-    ]);
-
-    const csvContent = "data:text/csv;charset=utf-8,"
-      + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "chatgpt_survey_data.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   if (view === "loading") {
@@ -546,13 +521,26 @@ export default function App() {
                     <Users className="w-4 h-4" /> {stats.total} Total Responses
                   </p>
                 </div>
-                <Button variant="secondary" onClick={exportCSV}>
-                  <Download className="w-4 h-4" /> Export CSV
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                    onClick={async () => {
+                      if (confirm("Are you sure you want to delete ALL responses? This cannot be undone.")) {
+                        if (confirm("Really? All data will be lost forever.")) {
+                          await clearAll();
+                          alert("All data cleared.");
+                        }
+                      }
+                    }}
+                  >
+                    Clear All Data
+                  </Button>
+                </div>
               </div>
 
               {/* Charts Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
                 {/* Q3 Pie */}
                 <Card>
                   <div className="flex items-center gap-2 mb-6">
@@ -564,17 +552,6 @@ export default function App() {
                   <DonutChart data={stats.q3Data} />
                 </Card>
 
-                {/* Q4 Bar */}
-                <Card className="lg:col-span-2">
-                  <div className="flex items-center gap-2 mb-6">
-                    <TrendingUp className="w-5 h-5 text-indigo-500" />
-                    <h3 className="font-semibold text-slate-700">
-                      Usage Frequency
-                    </h3>
-                  </div>
-                  <SimpleBarChart data={stats.q4Data} />
-                </Card>
-
                 {/* Q5 Pie */}
                 <Card>
                   <div className="flex items-center gap-2 mb-6">
@@ -584,6 +561,33 @@ export default function App() {
                     </h3>
                   </div>
                   <DonutChart data={stats.q5Data} />
+                </Card>
+
+                {/* Q4 Bar */}
+                <Card>
+                  <div className="flex items-center gap-2 mb-6">
+                    <TrendingUp className="w-5 h-5 text-indigo-500" />
+                    <h3 className="font-semibold text-slate-700">
+                      Usage Frequency
+                    </h3>
+                  </div>
+                  <SimpleBarChart data={stats.q4Data} />
+                </Card>
+
+                {/* Total Submissions Card */}
+                <Card className="flex flex-col items-center justify-center text-center py-10">
+                  <div className="w-20 h-20 bg-rose-100 rounded-full flex items-center justify-center mb-6 animate-bounce">
+                    <span className="text-4xl">💖</span>
+                  </div>
+                  <h3 className="text-5xl font-black text-slate-800 mb-2">
+                    {stats.total}
+                  </h3>
+                  <p className="text-xl font-bold text-slate-700 mb-1">
+                    Amazing Humans!
+                  </p>
+                  <p className="text-slate-500">
+                    Thank you all for sharing your habits! ✨
+                  </p>
                 </Card>
               </div>
 
