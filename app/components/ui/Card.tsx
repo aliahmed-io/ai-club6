@@ -15,7 +15,7 @@ export const Card = ({
 }) => (
     <div
         className={cn(
-            "bg-white/60 backdrop-blur-xl border border-white/40 shadow-xl rounded-3xl p-6",
+            "bg-white/80 backdrop-blur-xl border border-white/60 shadow-2xl shadow-indigo-500/10 rounded-3xl p-5 sm:p-6 md:p-8",
             className
         )}
     >
